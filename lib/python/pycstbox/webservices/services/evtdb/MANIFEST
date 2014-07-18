@@ -1,0 +1,4 @@
+[service]
+label=Events database access
+[settings]
+dao=fsys

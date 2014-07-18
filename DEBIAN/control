@@ -1,0 +1,10 @@
+Package: cstbox-ext-evtdb-ws
+Version: 1.0.0
+Section: base
+Priority: optional
+Architecture: all
+Depends: cstbox-core, cstbox-ext-webservices, cstbox-ext-evtdb
+Maintainer: Eric Pascual <eric.pascual@cstb.fr>
+Description: CSTBox events database Web services extension module
+ This package provides the Web services based API for the events database.
+
