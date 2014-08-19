@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SVC="cstbox-webservices"
+
+# restarts the Web services server for the package removal to be taken in account
+# if the CSTBox is currently running
+if [ -e /var/run/cstbox/cstbox-dbus.pid ] ; then
+    service $SVC restart
+    echo "Restarting Web services API server"
+fi
+
