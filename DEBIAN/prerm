@@ -5,5 +5,4 @@ set -e
 . /etc/cstbox/setenv
 . $CSTBOX_LIB_DPKG/lib-maintscript
 
-stop_service "cstbox-evtdb"
 cleanup_pyc

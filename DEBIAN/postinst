@@ -1,9 +1,11 @@
 #!/bin/bash
 
-SVC="cstbox-evtdb"
+SVC="cstbox-webservices"
 
-# starts the service if the CSTBox is currently running
+# restarts the Web services server for the new package to be taken in account
+# if the CSTBox is currently running
 if [ -e /var/run/cstbox/cstbox-dbus.pid ] ; then
-    service $SVC start 
+    echo "Restarting Web services API server"
+    service $SVC restart
 fi
 
