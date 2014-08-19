@@ -20,7 +20,7 @@
 
 __author__ = 'Eric PASCUAL - CSTB (eric.pascual@cstb.fr)'
 
-from tornado.web import HTTPError
+import dateutil.parser
 
 from pycstbox import log, evtdao
 from pycstbox.events import DataKeys
@@ -54,6 +54,10 @@ class BaseHandler(WSHandler):
     It takes care of storing the DAO instance configured when initializing the service module.
     """
     def initialize(self, logger=None, dao=None, **kwargs):
+        """
+        :param logger logger: message logger
+        :param pycstbox.evtdao.base.AbstractDAO dao: DAO used to access the data
+        """
         super(BaseHandler, self).initialize(logger, **kwargs)
         self._dao = dao
 
@@ -66,11 +70,8 @@ class GetAvailableDaysHandler(BaseHandler):
         y : the year (full number with centuries)
     """
     def do_get(self):
-        try:
-            month = (int(self.get_argument("y")), int(self.get_argument("m")))
-        except HTTPError:
-            month = None
 
+        month = (int(self.get_argument("y")), int(self.get_argument("m")))
         days = []
         for day in self._dao.get_available_days(month):
             days.append(day.strftime('%Y/%m/%d'))
@@ -78,13 +79,11 @@ class GetAvailableDaysHandler(BaseHandler):
         self.write({'days': days})
 
 
-class GetEventsHandler(BaseHandler):
+class GetDayEventsHandler(BaseHandler):
     """ Retrieves the list of events available for a given day
 
     HTTP request arguments:
-        d : the day
-            (format : SQL date by default, but '/' separator
-            are accepted too)
+        d : the day (format : "YYYY-MM-DD" or "YYYY/MM/DD")
 
     """
     def get(self):
@@ -94,16 +93,47 @@ class GetEventsHandler(BaseHandler):
         for event in self._dao.get_events_for_day(day):
             ts, var_type, var_name, data = event
             value = data.get(DataKeys.VALUE, '')
-            units = data.get(DataKeys.UNITS, '')
+            units = data.get(DataKeys.UNIT, '')
 
             _events.append((ts.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
                             var_type, var_name, value, units))
 
         self.write({'events': _events})
 
+
+class GetEventsHandler(BaseHandler):
+    """ Retrieves the list of events matching the given criteria.
+
+    HTTP request arguments:
+        start : mandatory start date (format : ISO datetime)
+        end : mandatory end date (format : ISO datetime)
+        vartype : (optional) type of accepted variables
+        varname : (optional) name of requested variable
+
+    Note: either vartype or varname can be provided. If both are given, vartype
+    will be ignored.
+    """
+    def get(self):
+        from_time = dateutil.parser.parse(self.get_argument('start'))
+        to_time = dateutil.parser.parse(self.get_argument('end'))
+        var_name = self.get_argument('varname', None)
+        var_type = None if var_name else self.get_argument('vartype', None)
+
+        _events = []
+        for event in self._dao.get_events(from_time=from_time, to_time=to_time, var_type=var_type, var_name=var_name):
+            ts, var_type, var_name, data = event
+            value = data.get(DataKeys.VALUE, '')
+            units = data.get(DataKeys.UNIT, '')
+
+            _events.append((ts.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], var_type, var_name, value, units))
+
+        self.write({'events': _events})
+
+
 _handlers_initparms = {}
 
 handlers = [
     (r"/days", GetAvailableDaysHandler, _handlers_initparms),
+    (r"/dayevents", GetDayEventsHandler, _handlers_initparms),
     (r"/events", GetEventsHandler, _handlers_initparms),
 ]
