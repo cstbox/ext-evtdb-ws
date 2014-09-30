@@ -13,7 +13,3 @@ include $(CSTBOX_DEVEL_HOME)/lib/makefile-dist.mk
 copy_files: \
 	copy_python_files
 
-	@echo "------ removing package marker files required by the IDE"
-	$(call rm_devel_file,webservices/__init__.py)
-	$(call rm_devel_file,webservices/services/__init__.py)
-
