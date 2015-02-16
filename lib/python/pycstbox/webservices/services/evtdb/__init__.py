@@ -130,10 +130,44 @@ class GetEventsHandler(BaseHandler):
         self.write({'events': _events})
 
 
+class ExportEventsHandler(BaseHandler):
+    """ Exports the list of events available for a given day
+
+    HTTP request arguments:
+        d : the day (format : "YYYY-MM-DD" or "YYYY/MM/DD")
+        f : export format (currently supported: CSV)
+    """
+    def __init__(self, *args, **kwargs):
+        super(ExportEventsHandler, self).__init__(*args, **kwargs)
+
+        self._export_handlers = {
+            'csv': self._export_as_csv
+        }
+
+    def _export_as_csv(self, events, day):
+        self.set_header("Content-Type", "text/csv; charset=UTF-8")
+        self.set_header("Content-Disposition", "filename=%s.scv" % day)
+        self.write('timestamp;var_type;var_name;data\n')
+        for event in events:
+            ts, var_type, var_name, data = event
+            value = data[DataKeys.VALUE] if data and data.has_key(DataKeys.VALUE) else ''
+            units = data[DataKeys.UNIT] if data and data.has_key(DataKeys.UNIT) else ''
+            self.write(';'.join((ts.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], var_type, var_name, value, units)) + '\n')
+
+    def get(self):
+        day = self.get_argument("d").replace('/', '-')
+        fmt = self.get_argument("f", default='csv').lower()
+        if fmt not in self._export_handlers:
+            raise ValueError("unsupported export format (%s)" % fmt)
+
+        self._export_handlers[fmt](self._dao.get_events_for_day(day), day)
+
+
 _handlers_initparms = {}
 
 handlers = [
     (r"/days", GetAvailableDaysHandler, _handlers_initparms),
     (r"/dayevents", GetDayEventsHandler, _handlers_initparms),
     (r"/events", GetEventsHandler, _handlers_initparms),
+    (r"/export", ExportEventsHandler, _handlers_initparms),
 ]
