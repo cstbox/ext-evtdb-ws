@@ -146,7 +146,7 @@ class ExportEventsHandler(BaseHandler):
 
     def _export_as_csv(self, events, day):
         self.set_header("Content-Type", "text/csv; charset=UTF-8")
-        self.set_header("Content-Disposition", "filename=%s.scv" % day)
+        self.set_header("Content-Disposition", "filename=%s.csv" % day)
         self.write('timestamp;var_type;var_name;data\n')
         for event in events:
             ts, var_type, var_name, data = event
